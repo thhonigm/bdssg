@@ -50,8 +50,7 @@ def handle_markdown_elements(text, what = _LINK | _IMAGE):
             m.group(1) == "!" and (what & _IMAGE) == _IMAGE
         ):
             if (what & _SPLIT) == _SPLIT:
-                t0 = off
-                t1, off = m.span()
+                t0, (t1, off) = off, m.span()
                 if t0 < t1:
                     elements.append(TextNode(text[t0:t1], TextType.TEXT))
                 if (what & _LINK) == _LINK:
@@ -61,7 +60,6 @@ def handle_markdown_elements(text, what = _LINK | _IMAGE):
                 else:
                     text_type = TextType.TEXT
                 elements.append(TextNode(m.group(2), text_type, m.group(3)))
-                off = m.span()[1]
             else:
                 elements.append((m.group(2), m.group(3)))
     if (what & _SPLIT) == _SPLIT and (len(elements) == 0 or off < len(text)):
@@ -90,5 +88,12 @@ def split_nodes_link(old_nodes):
             nodes.extend(handle_markdown_elements(node.text, _LINK | _SPLIT))
         else:
             nodes.append(node)
+    return nodes
+
+def text_to_textnodes(text):
+    nodes = split_nodes_link(split_nodes_image([TextNode(text, TextType.TEXT)]))
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "*", TextType.ITALIC)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
     return nodes
 
